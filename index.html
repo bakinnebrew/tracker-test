@@ -1,0 +1,42 @@
+{% extends "tracker/layout.html" %}
+{% load static %}
+
+    {% block body %}
+    
+    <button class= "btn btn-sm btn-outline-primary" id="account"> Account </button>
+    <button class= "btn btn-sm btn-outline-primary" id="homepage"> Home </button>
+    <button class= "btn btn-sm btn-outline-primary" id="archived"> Archived </button>
+   
+    
+    
+        <div id="homepage-view">
+            <h1>Home</h1>
+            <div id="add-button">
+            <button class= "btn btn-primary" id="new-barrel"> Add Barrel </button>
+            </div>
+        </div>
+
+        <div id="new-barrel-page">
+            <h1>New Barrel</h1>
+            <form action = "" method = "POST" enctype="multipart/form-data"> 
+                {% csrf_token %} 
+                {{ form.as_p }} 
+                <input type="submit" value=Add> 
+            </form> 
+        </div>
+
+        <div id="archive-view">
+            <h1>Archives</h1>
+        </div>
+
+        <div id="account-view">
+            <h1 id="account-name"></h1>
+        </div>
+
+    {% endblock %}
+
+{% block script %}
+    <script src="{% static 'tracker/functions.js' %}"></script>
+{% endblock %}
+
+
