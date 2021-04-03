@@ -3,34 +3,85 @@
 
     {% block body %}
     
-    <button class= "btn btn-sm btn-outline-primary" id="account"> Account </button>
-    <button class= "btn btn-sm btn-outline-primary" id="homepage"> Home </button>
-    <button class= "btn btn-sm btn-outline-primary" id="archived"> Archived </button>
-   
+    <a class="btn btn-sm btn-outline-primary" id="new-barrel" href="{% url 'tracker:add_barrel' %}"> Add Barrel </a>
+    <button class= "btn btn-sm btn-outline-primary" id="account" data-view="account"> Account </button>
+    <button class= "btn btn-sm btn-outline-primary" id="homepage" data-view="home"> Home </button>
+    <button class= "btn btn-sm btn-outline-primary" id="archived" data-view="archived"> Archived </button>
+    <button class= "btn btn-sm btn-outline-primary" id="alerts" data-view="alerts"> Alerts </button>
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'tracker:logout' %}">Log Out</a>
+    <hr>
+        <div id="filter-view" style="float:right">
+            <h4>Filter</h4>
+            <form id="filter-form">
+                <div class="form-group">
+                    <label for="beer_style">Beer Style:</label>
+                    <select id="beer_style" name="beer_style">
+                        <option value="All">All </option>
+                        <option value="Sour">Sour</option>
+                        <option value="Stout_Porter">Stout/Porter</option>
+                        <option value="Lager">Lager</option>
+                        <option value="Belgian">Belgian</option>
+                        <option value="Specialty">Specialty</option>
+                    </select>
+                </div>
+                <div>
+                    <label for = "archived_unarchived_filter">Archived Status: </label>
+                    <select id="archived_unarchived_filter" name="archived_unarchived">
+                        <option value="Both">Both</option>
+                        <option value="Archived">Archived</option>
+                        <option value="Unarchived">Unarchived</option>
+                    </select>
+                </div>
+                <div>
+                    <label for = "barrel_type"> Barrel Type:</label>
+                    <select id="barrel_type" name="barrel_type">
+                        <option value="All">All</option>
+                        <option value="Red Wine">Red Wine</option>
+                        <option value="White Wine">White Wine</option>
+                        <option value="Bourbon">Bourbon</option>
+                        <option value="Rum">Rum</option>
+                        <option value="Gin">Gin</option>
+                        <option value="Whiskey">Whiskey</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <input type= "button" value="Filter" onclick = "return filter_barrels()">
+            </form>
+        </div>
     
-    
-        <div id="homepage-view">
-            <h1>Home</h1>
-            <div id="add-button">
-            <button class= "btn btn-primary" id="new-barrel"> Add Barrel </button>
+        <div id="barrels-view">
+        </div>
+
+        <div id="single-barrel-view" data-view="barrel">
+        </div>
+
+        <div id="add-note-view">
+        <form id="add-note-form">
+            <div class = "form-group">
+                <input type="text" id="add-note-content" class="form-control" placeholder="Add Note...">
             </div>
-        </div>
-
-        <div id="new-barrel-page">
-            <h1>New Barrel</h1>
-            <form action = "" method = "POST" enctype="multipart/form-data"> 
-                {% csrf_token %} 
-                {{ form.as_p }} 
-                <input type="submit" value=Add> 
-            </form> 
-        </div>
-
-        <div id="archive-view">
-            <h1>Archives</h1>
+        </form>
         </div>
 
         <div id="account-view">
             <h1 id="account-name"></h1>
+        </div>
+
+        <div id="alerts-view">
+        </div>
+
+        <div id="edit-account-view">
+            <h1>Edit Account</h1>
+            <button class="btn btn-primary" id="account-back-button">Back</button>
+            <form id="edit-account-form">
+                <div class = "form-group">
+                    Username: <input id="edit-account-username" class="form-control" value="{{request.user.username}}">
+                </div>
+                <div class = "form-group">
+                    Email: <input id="edit-account-email" class="form-control" value="{{request.user.email}}">
+                </div>
+                <input type="button" value="Save Changes" class="btn btn-primary" onclick = "return submit_changes_to_account()">
+            </form>
         </div>
 
     {% endblock %}
@@ -38,5 +89,6 @@
 {% block script %}
     <script src="{% static 'tracker/functions.js' %}"></script>
 {% endblock %}
+
 
 
