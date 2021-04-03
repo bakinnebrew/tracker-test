@@ -1,43 +1,67 @@
 
 document.addEventListener('DOMContentLoaded', function() {
 
-  window.onpopstate = function(event) {
-    console.log(event.state.view)
-    build_barrels(event.state.view)
-  }
+  // window.onpopstate = function(event) {
+  //   console.log(event.state.view)
+  //   build_barrels(event.state.view)
+  // }
 
-  document.querySelectorAll('button').forEach(button => {
-    button.onclick = function() {
-      const view = this.dataset.view;
-      history.pushState({view: view}, "", `${view}`);
-    };
-  });
+  // document.querySelectorAll('button').forEach(button => {
+  //   button.onclick = function() {
+  //     const view = this.dataset.view;
+  //     history.pushState({view: view}, "", `${view}`);
+    // };
+  // });
     document.querySelector('#homepage').addEventListener('click', () => build_barrels('home'));
     document.querySelector('#archived').addEventListener('click', () => build_barrels('archived'));
     document.querySelector('#account').addEventListener('click', () => load_account());
+    document.querySelector('#alerts').addEventListener('click', () => load_alerts());
+
+    fetch(`/load_alerts`)
+      .then(response => response.json())
+      .then(alerts => {
+        var counter = 0;
+        for(var i = 0; i < alerts.length; i++){
+          if(alerts[i].alert_read === false){
+            counter++;
+          }
+        }
+        if(counter > 0){
+          document.getElementById("alerts").style.backgroundColor= "red"
+        } 
+        else{
+          document.getElementById("alerts").style.backgroundColor= "whitesmoke"
+        }
+      }) 
     
     build_barrels('home')
   });
 
-
-
-
+//filter barrels 
 function filter_barrels(){
+  //based on beer styles
   const filter_params = document.querySelector('#beer_style').value;
+  const filter_parms2 = document.querySelector('#archived_unarchived_filter').value;
+  const filter_params3 = document.querySelector('#barrel_type').value;
 
   document.querySelector('#barrels-view').style.display = 'block'; 
   document.querySelector('#account-view').style.display = 'none';
   document.querySelector('#single-barrel-view').style.display = 'none';
+  document.querySelector('#edit-account-view').style.display = 'none';
+  document.querySelector('#add-note-view').style.display = 'none';
+  document.querySelector('#alerts-view').style.display = 'none';
 
   document.querySelector('#barrels-view').innerHTML = `<h3>Filtered Results: ${filter_params}</h3>`;
-
-  fetch(`/filter/${filter_params}`)
+  var counter = 0;
+  const line_break = document.createElement('br');
+  
+  fetch(`/filter/${filter_params}/${filter_parms2}/${filter_params3}`)
     .then(response => response.json())
     .then(barrels => {
       console.log(barrels)
-
+      //buils barrels, creating elements, assigning innerHTML, and append to DOM tree
       barrels.forEach(barrels => {
-
+      counter++
       const barrel_title = document.createElement('h3');
       const barrel_fill_date = document.createElement('div');
       const barrel_pull_date = document.createElement('div');
@@ -57,7 +81,10 @@ function filter_barrels(){
       document.querySelector('#barrels-view').append(barrel_pull_date);
 
       });
+      document.querySelector('#barrels-view').append(line_break)
+      document.querySelector('#barrels-view').append('Barrel Count: ' + counter);
   })
+  //catch error 
   .catch(error => {
     console.log('error:', error )
     const no_barrel_error = document.createElement('h3');
@@ -67,24 +94,27 @@ function filter_barrels(){
 }
 
 
+//TODO
+// function bookmarked_barrel_counter(){
+//   var counter = 0;
+//   fetch(`/build_barrels/bookmarked`) 
+//     .then(response => response.json())
+//     .then(barrels => {
+//       for(var i = 0; i < barrels.length; i++){
+//         counter++;
+//       } 
+//       console.log(counter);
+//     })
+//     .then( () => {
+//       var c = counter;
+//     return c;
+//     });
+// };
 
-function bookmarked_barrel_counter(){
-  fetch(`/build_barrels/bookmarked`) 
-    .then(response => response.json())
-    .then(barrels => {
-      var counter = 0;
-      for(var i = 0; i < barrels.length; i++){
-        counter++;
-      }
-      
-      return counter;
-    });
-    
-};
-
-
+//loads user account data
 function load_account(){
 
+  //clears the DOM before fetching data. This is dumb. I just need to store it in cache. 
   const parent = document.getElementById("account-view")
     while (parent.firstChild) {
      parent.firstChild.remove()
@@ -94,21 +124,41 @@ function load_account(){
   document.querySelector('#account-view').style.display = 'block';
   document.querySelector('#single-barrel-view').style.display = 'none';
   document.querySelector('#filter-view').style.display = 'none';
+  document.querySelector('#edit-account-view').style.display = 'none';
+  document.querySelector('#add-note-view').style.display = 'none';
+  document.querySelector('#alerts-view').style.display = 'none';
 
   fetch('/load_account')
     .then(response => response.json())
     .then(account => {
+      //create elements, adjust innerHTML, and append to DOM tree. 
+      
       console.log(account)
       const account_header = document.createElement('h1')
       const account_owner_email = document.createElement('div')
       const account_owner_date_joined = document.createElement('div')
       const account_owner_barrel_count = document.createElement('div')
       const account_bookmarked_barrel_button = document.createElement('button')
-      const bookmark_barrel_count = bookmarked_barrel_counter()
+      const account_edit_button = document.createElement('button')
+      // const barrel_count_bookmarked = bookmarked_barrel_counter()
+      // console.log(bookmarked_barrel_counter())
 
-      account_bookmarked_barrel_button.innerHTML = "Bookmarked Barrels " + bookmark_barrel_count;
+      var counter = 0;
+      fetch(`/build_barrels/bookmarked`) 
+    .then(response => response.json())
+    .then(barrels => {
+      for(var i = 0; i < barrels.length; i++){
+        counter++;
+      }
+      account_bookmarked_barrel_button.innerHTML = "Bookmarked Barrels: " + counter;
+    })
+
       account_bookmarked_barrel_button.addEventListener('click', function() {
         build_barrels('bookmarked')
+      })
+      account_edit_button.innerHTML = "Edit Account";
+      account_edit_button.addEventListener('click', function() {
+        edit_account()
       })
       account_header.innerHTML = account.account_owner;
       account_owner_email.innerHTML = "Email:  " + account.email;
@@ -120,24 +170,72 @@ function load_account(){
       document.querySelector('#account-view').append(account_owner_date_joined);
       document.querySelector('#account-view').append(account_owner_barrel_count);
       document.querySelector('#account-view').append(account_bookmarked_barrel_button);
+      document.querySelector('#account-view').append(account_edit_button);
     });
 }
+//loads alerts for barrels needing to be pulled within 7 days
+function load_alerts(){
+  document.querySelector('#alerts-view').style.display = 'block';
+  document.querySelector('#barrels-view').style.display = 'none'; 
+  document.querySelector('#account-view').style.display = 'none';
+  document.querySelector('#single-barrel-view').style.display = 'none';
+  document.querySelector('#filter-view').style.display = 'none';
+  document.querySelector('#edit-account-view').style.display = 'none';
+  document.querySelector('#add-note-view').style.display = 'none';
+
+  document.querySelector('#alerts-view').innerHTML = `<h3> Alerts </h3>`;
+
+  fetch(`/load_alerts`)
+    .then(response => response.json())
+    .then(alerts => {
+      console.log(alerts)
+
+      alerts.forEach(alerts => {
+      const alert_title = document.createElement('h6');
+      const alert_message = document.createElement('div');
+      const line_break = document.createElement('br')
+
+      alert_title.innerHTML = "Alert for " + alerts.alert_barrel;
+      alert_message.innerHTML = alerts.alert_message;
+
+      document.querySelector('#alerts-view').append(alert_title);
+      document.querySelector('#alerts-view').append(alert_message);
+      document.querySelector('#alerts-view').append(line_break);
+    })
+  });
+  document.getElementById("alerts").style.backgroundColor= "whitesmoke"
+  fetch(`/read_alerts`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      alert_read: true
+    })
+  })
+  .then( () => {
+    console.log("done")
+  });
 
 
+};
+//builds barrels based on build view
 function build_barrels(build_view){
 
   document.querySelector('#barrels-view').style.display = 'block'; 
   document.querySelector('#account-view').style.display = 'none';
   document.querySelector('#single-barrel-view').style.display = 'none';
   document.querySelector('#filter-view').style.display = 'block';
+  document.querySelector('#edit-account-view').style.display = 'none';
+  document.querySelector('#add-note-view').style.display = 'none';
+  document.querySelector('#alerts-view').style.display = 'none';
 
   document.querySelector('#barrels-view').innerHTML = `<h3>${build_view.charAt(0).toUpperCase() + build_view.slice(1)}</h3>`;
 
+  //Hits the API, asking for the barrels by build view, receiving array of objects as response
   fetch(`/build_barrels/${build_view}`) 
     .then(response => response.json())
     .then(barrels => {
       console.log(barrels);
 
+      //for each barrel, create elements, assign innerHTML, and append to DOM tree.
       barrels.forEach(barrels => {
 
         const barrel_title = document.createElement('h3');
@@ -161,6 +259,7 @@ function build_barrels(build_view){
     });
     
   })
+  //catch error
   .catch(error => {
     console.log('error:', error )
     const no_barrel_error = document.createElement('h3');
@@ -170,18 +269,23 @@ function build_barrels(build_view){
 };
 
 
-
+//Loads single barrel based on ID, rendering the details of the selected barrel
 function single_barrel_load(id){
   document.querySelector('#single-barrel-view').style.display = 'block';
+  document.querySelector('#add-note-view').style.display = 'block';
   document.querySelector('#account-view').style.display = 'none';
   document.querySelector('#barrels-view').style.display = 'none'; 
   document.querySelector('#filter-view').style.display = 'none';
+  document.querySelector('#edit-account-view').style.display = 'none';
+  document.querySelector('#alerts-view').style.display = 'none';
 
+  //Hits the API, asking for the barrel by ID, receiving JSON as response
   fetch(`/single_barrel_load/${id}`)
     .then(response => response.json())
     .then(barrel => {
       console.log(barrel);
 
+    //Build barrel
       document.querySelector('#single-barrel-view').innerHTML = `<h3>${barrel.title.charAt(0).toUpperCase() + barrel.title.slice(1)}</h3>`;
         
         const barrel_estimated_ABV = document.createElement('div');
@@ -195,6 +299,9 @@ function single_barrel_load(id){
         const barrel_delete_button = document.createElement('button');
         const barrel_bookmark_button = document.createElement('button');
         const barrel_unbookmark_button = document.createElement('button');
+        const barrel_add_note_button = document.createElement('button');
+        const barrel_stop_alerts_button = document.createElement('button');
+        const barrel_start_alerts_button = document.createElement('button');
 
         barrel_estimated_ABV.innerHTML = "Estimated ABV:  " + barrel.estimated_ABV +"%";
         barrel_description.innerHTML = "Description:  " + barrel.description;
@@ -204,38 +311,65 @@ function single_barrel_load(id){
         barrel_pull_date.innerHTML = "Estimated Pull Date:  " + barrel.pull_date;
         const barrel_id = barrel.id;
 
+        //bookmark button
         const barrel_bookmarked = barrel.bookmarked;
         barrel_bookmark_button.innerHTML = "Bookmark Barrel"
         barrel_bookmark_button.addEventListener('click', function() {
           bookmark_barrel(barrel_id)
         })
 
+        //unbookmark button
         barrel_unbookmark_button.innerHTML = "Unbookmark Barrel"
         barrel_unbookmark_button.addEventListener('click', function() {
           unbookmark_barrel(barrel_id)
         })
 
+        //archive barrel button
         const barrel_archived = barrel.archived;
         barrel_archive_button.innerHTML = "Archive Barrel";
         barrel_archive_button.addEventListener('click', function() {
           archive_barrel(barrel_id)
         })
+        //unarchive barrel button
         barrel_unarchive_button.innerHTML = "Unarchive Barrel";
         barrel_unarchive_button.addEventListener('click', function() {
           unarchive_barrel(barrel_id)
         })
+        //delete barrel button
         barrel_delete_button.innerHTML = "Delete Barrel"
         barrel_delete_button.addEventListener('click', function() {
           delete_barrel(barrel_id)
         })
 
+        //add note button
+        barrel_add_note_button.innerHTML = "Add Note"
+        barrel_add_note_button.addEventListener('click', function() {
+          add_note(barrel_id)
+        })
+
+        //start alerts button
+        const barrel_alerts = barrel.alert_off;
+        barrel_start_alerts_button.innerHTML = "Turn On Alerts"
+        barrel_start_alerts_button.addEventListener('click', function() {
+          start_alerts(barrel_id)
+        })
+
+        //stop alerts button
+        barrel_stop_alerts_button.innerHTML = "Turn Off Alerts"
+        barrel_stop_alerts_button.addEventListener('click', function() {
+          stop_alerts(barrel_id)
+        })
+
+        //append each element to the DOM
         document.querySelector('#single-barrel-view').append(barrel_estimated_ABV);
         document.querySelector('#single-barrel-view').append(barrel_beer_style);
         document.querySelector('#single-barrel-view').append(barrel_category);
         document.querySelector('#single-barrel-view').append(barrel_fill_date);
         document.querySelector('#single-barrel-view').append(barrel_pull_date);
         document.querySelector('#single-barrel-view').append(barrel_description);
-        document.querySelector('#single-barrel-view').append(barrel_delete_button)
+        document.querySelector('#single-barrel-view').append(barrel_delete_button);
+        document.querySelector('#single-barrel-view').append(barrel_add_note_button);
+        //conditions the will render the visibility of buttons based on state of the barrel
         if(barrel_archived === false){
         document.querySelector('#single-barrel-view').append(barrel_archive_button);
         }
@@ -249,39 +383,148 @@ function single_barrel_load(id){
         else{
           document.querySelector('#single-barrel-view').append(barrel_unbookmark_button);
         }
+
+        if(barrel_alerts === false){
+          console.log('test')
+          document.querySelector('#single-barrel-view').append(barrel_stop_alerts_button)
+        }
+        else{
+          document.querySelector('#single-barrel-view').append(barrel_start_alerts_button)
+        }
+        load_notes(barrel_id)
         })
-   
   }
 
+  function load_notes(id){
+    fetch(`/load_notes/${id}`)
+      .then(response => response.json())
+      .then(notes => {
+        console.log(notes)
 
+        const barrel_note_header = document.createElement('h3')
+        barrel_note_header.innerHTML = "Notes"
+        document.querySelector('#single-barrel-view').append(barrel_note_header);
+
+        notes.forEach(notes => {
+        
+        const barrel_note_timestamp = document.createElement('div');
+        const barrel_note_content = document.createElement('div');
+        const line_break = document.createElement('br');
+
+        barrel_note_timestamp.innerHTML = notes.note_timestamp;
+        barrel_note_content.innerHTML = notes.content;
+
+        document.querySelector('#single-barrel-view').append(barrel_note_timestamp);
+        document.querySelector('#single-barrel-view').append(barrel_note_content);
+        document.querySelector('#single-barrel-view').append(line_break)
+
+        });
+        
+      });
+  };
+
+
+  function add_note(id){
+    const content = document.querySelector("#add-note-content").value
+    fetch(`/add_note/${id}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        content: content
+      })
+    })
+    .then( () => {
+      console.log("done")
+    })
+    .then( () => {
+      alert("Your note has been succesfully added")
+    })
+    .then( () => {
+      single_barrel_load(id)
+    })
+  }
+
+  function edit_account(){
+    document.querySelector('#edit-account-view').style.display = 'block';
+    document.querySelector('#single-barrel-view').style.display = 'none';
+    document.querySelector('#account-view').style.display = 'none';
+    document.querySelector('#barrels-view').style.display = 'none'; 
+    document.querySelector('#filter-view').style.display = 'none';
+    document.querySelector('#add-note-view').style.display = 'none';
+    document.querySelector('#alerts-view').style.display = 'none';
+
+    document.querySelector('#account-back-button').addEventListener('click', () => load_account());
+  
+  };
+  
+ //Below are the PUT and DELETE operations hitting the API on the backend 
+//function that hits API with new changes made to username and/or email
+  function submit_changes_to_account() {
+    const username = document.querySelector("#edit-account-username").value;
+    const email = document.querySelector("#edit-account-email").value;
+
+    console.log(username)
+    console.log(email)
+    
+
+    fetch(`/edit_account/`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        username: username,
+        email: email
+      })
+    })
+    //alert stating that changes have been made
+      .then( () => {
+        alert("Your changes have been made")
+      })
+    //return back to Account
+      .then( () => {
+        load_account()
+      })
+     //alert error if there is an issue saving changes 
+      .catch(error => {
+        console.log(error, 'error')
+        alert("There was an error making these changes")
+      });
+    };
+
+
+//Archive barrel based on ID 
 function archive_barrel(id){
 
+  //change archived field in barrel model to true
   fetch(`/archive_barrel/${id}`, {
     method: 'PUT',
     body: JSON.stringify({
       archived: true
     })
   })
+  //return back to Homepage
   .then( () => {
     build_barrels('home')
   });
 }
 
+//Unarchive barrel based on ID
 function unarchive_barrel(id){
 
+  //change archived field in barrel model to false
   fetch(`/unarchive_barrel/${id}`, {
     method: 'PUT',
     body: JSON.stringify({
       archived: false
     })
   })
+  //return back to Homepage
   .then( () => {
     build_barrels('home')
   });
 }
 
+//Delete barrel based on ID
 function delete_barrel(id){
 
+  //confirm box asking if the user wants barrel to be deleted
   const delete_confirmation = confirm("Are you sure you want to delete this barrel ?");
   if( delete_confirmation === true ){
   
@@ -291,35 +534,78 @@ function delete_barrel(id){
     .then( () => {
       alert("This barrel has been deleted")
     })
+    //return back to Homepage
     .then( () => {
       build_barrels('home')
     })
   }
 };
 
+//Bookmarks barrel based on ID
 function bookmark_barrel(id){
 
+  //change bookmarked to true
   fetch(`/bookmark_barrel/${id}`, {
     method: 'PUT',
     body: JSON.stringify({
       bookmarked: true
   })
 })
+//return back to Homepage
 .then( () => {
     build_barrels('home')
   });
 }
 
+//Unbookmark barrel based on ID
 function unbookmark_barrel(id){
 
+  //change bookmarked to false
   fetch(`/unbookmark_barrel/${id}`, {
     method: 'PUT',
     body: JSON.stringify({
       bookmarked: false
   })
 })
+//return back to Homepage
 .then( () => {
     build_barrels('home')
   });
+}
+
+//turn on alerts for barrel
+function start_alerts(id){
+  //change alert_off for barrel to False
+  fetch(`/start_alerts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      alert_off: false
+    })
+  })
+.then( () => {
+alert("Alerts have been turned on for this barrel")
+})
+  //return back home
+.then( () => {
+  single_barrel_load(id)
+});
+}
+
+//turn of alerts for barrel
+function stop_alerts(id){
+  //change alert_off for barrel to True
+  fetch(`/stop_alerts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      alert_off: true
+    })
+  })
+.then( () => {
+  alert("Alerts have been turned off for this barrel")
+})
+  //return back home
+.then( () => {
+  single_barrel_load(id)
+});
 }
 
