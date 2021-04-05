@@ -3,12 +3,13 @@
 
     {% block body %}
     
-    <a class="btn btn-sm btn-outline-primary" id="new-barrel" href="{% url 'tracker:add_barrel' %}"> Add Barrel </a>
-    <button class= "btn btn-sm btn-outline-primary" id="account" data-view="account"> Account </button>
-    <button class= "btn btn-sm btn-outline-primary" id="homepage" data-view="home"> Home </button>
-    <button class= "btn btn-sm btn-outline-primary" id="archived" data-view="archived"> Archived </button>
-    <button class= "btn btn-sm btn-outline-primary" id="alerts" data-view="alerts"> Alerts </button>
-    <a class="btn btn-sm btn-outline-primary" href="{% url 'tracker:logout' %}">Log Out</a>
+    <button class= "btn btn-sm btn-outline-secondary" id="add_barrel" data-view="add"> Add Barrel </button>
+    <button class= "btn btn-sm btn-outline-secondary" id="account" data-view="account"> Account </button>
+    <button class= "btn btn-sm btn-outline-secondary" id="homepage" data-view="home"> Home </button>
+    <button class= "btn btn-sm btn-outline-secondary" id="archived" data-view="archived"> Archived </button>
+    <button class= "btn btn-sm btn-outline-secondary" id="alerts" data-view="alerts"> Alerts </button>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'tracker:logout' %}">Log Out</a>
+    
     <hr>
         <div id="filter-view" style="float:right">
             <h4>Filter</h4>
@@ -72,7 +73,7 @@
 
         <div id="edit-account-view">
             <h1>Edit Account</h1>
-            <button class="btn btn-primary" id="account-back-button">Back</button>
+            <button class="btn btn-secondary btn-sm" id="account-back-button">Back</button>
             <form id="edit-account-form">
                 <div class = "form-group">
                     Username: <input id="edit-account-username" class="form-control" value="{{request.user.username}}">
@@ -80,7 +81,55 @@
                 <div class = "form-group">
                     Email: <input id="edit-account-email" class="form-control" value="{{request.user.email}}">
                 </div>
-                <input type="button" value="Save Changes" class="btn btn-primary" onclick = "return submit_changes_to_account()">
+                <input type="button" value="Save Changes" class="btn btn-secondary btn-sm" onclick = "return submit_changes_to_account()">
+            </form>
+        </div>
+
+        <div id="edit-barrel-view">
+            <h1 id="edit-barrel-header">Edit Barrel</h1>
+            <h1 id="submit-barrel-header">Add Barrel</h1>
+            <button class="btn btn-secondary btn-sm" id="barrel-back-button">Back</button>
+            <form id="edit-barrel-form">
+                <div class = "form-group">
+                    Title: <input id="edit-barrel-title" class="form-control">
+                </div>
+                <div>
+                    Estimated ABV: <input id="edit-barrel-estimated-ABV" class="form-control" type="number" >
+                </div>
+                <div class="form-group">
+                    <label for="edit-beer-style">Beer Style:</label>
+                    <select id="edit-beer-style" name="edit-beer-style">
+                        <option value="Sour">Sour</option>
+                        <option value="Stout_Porter">Stout/Porter</option>
+                        <option value="Lager">Lager</option>
+                        <option value="Belgian">Belgian</option>
+                        <option value="Specialty">Specialty</option>
+                    </select>
+                </div>
+                <div>
+                    <label for = "edit-barrel-type"> Barrel Type:</label>
+                    <select id="edit-barrel-type" name="edit-barrel-type">
+                        <option value="Red Wine">Red Wine</option>
+                        <option value="White Wine">White Wine</option>
+                        <option value="Bourbon">Bourbon</option>
+                        <option value="Rum">Rum</option>
+                        <option value="Gin">Gin</option>
+                        <option value="Whiskey">Whiskey</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    Fill Date: <input id="edit-barrel-fill-date" class="form-control" type="datetime" placeholder="Apr 3, 2021">
+                </div>
+                <div>
+                    Pull Date: <input id="edit-barrel-pull-date" class="form-control" type="datetime" placeholder="Oct 3, 2021">
+                </div>
+                <div>
+                    Description: <input id="edit-barrel-description" class="form-control" type="text">
+                </div>
+
+                <input type="button" id="save-changes-button" value="Save Changes" class="btn btn-secondary btn-sm">
+                <input type="button" id="submit-barrel-button" value="Submit" class="btn btn-secondary btn-sm">
             </form>
         </div>
 
