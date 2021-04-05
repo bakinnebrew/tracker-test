@@ -1,4 +1,6 @@
 
+
+
 document.addEventListener('DOMContentLoaded', function() {
 
   // window.onpopstate = function(event) {
@@ -16,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('#archived').addEventListener('click', () => build_barrels('archived'));
     document.querySelector('#account').addEventListener('click', () => load_account());
     document.querySelector('#alerts').addEventListener('click', () => load_alerts());
+    document.querySelector('#add_barrel').addEventListener('click', () => add_barrel());
+    document.querySelector('#submit-barrel-button').addEventListener('click', () => submit_barrel())
+   
 
     fetch(`/load_alerts`)
       .then(response => response.json())
@@ -29,9 +34,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if(counter > 0){
           document.getElementById("alerts").style.backgroundColor= "red"
         } 
-        else{
-          document.getElementById("alerts").style.backgroundColor= "whitesmoke"
-        }
+        // else{
+        //   document.getElementById("alerts").style.backgroundColor= "whitesmoke"
+        // }
       }) 
     
     build_barrels('home')
@@ -50,6 +55,7 @@ function filter_barrels(){
   document.querySelector('#edit-account-view').style.display = 'none';
   document.querySelector('#add-note-view').style.display = 'none';
   document.querySelector('#alerts-view').style.display = 'none';
+  document.querySelector('#edit-barrel-view').style.display = 'none';
 
   document.querySelector('#barrels-view').innerHTML = `<h3>Filtered Results: ${filter_params}</h3>`;
   var counter = 0;
@@ -93,23 +99,80 @@ function filter_barrels(){
     });
 }
 
+function add_barrel(){
 
-//TODO
-// function bookmarked_barrel_counter(){
-//   var counter = 0;
-//   fetch(`/build_barrels/bookmarked`) 
-//     .then(response => response.json())
-//     .then(barrels => {
-//       for(var i = 0; i < barrels.length; i++){
-//         counter++;
-//       } 
-//       console.log(counter);
-//     })
-//     .then( () => {
-//       var c = counter;
-//     return c;
-//     });
-// };
+  document.querySelector('#edit-barrel-view').style.display = 'block';
+  document.querySelector('#submit-barrel-button').style.display= 'block';
+  document.querySelector('#submit-barrel-header').style.display = 'block';
+  document.querySelector('#edit-barrel-header').style.display = 'none';
+  document.querySelector('#save-changes-button').style.display = 'none';
+  document.querySelector('#edit-account-view').style.display = 'none';
+  document.querySelector('#single-barrel-view').style.display = 'none';
+  document.querySelector('#account-view').style.display = 'none';
+  document.querySelector('#barrels-view').style.display = 'none'; 
+  document.querySelector('#filter-view').style.display = 'none';
+  document.querySelector('#add-note-view').style.display = 'none';
+  document.querySelector('#alerts-view').style.display = 'none';
+
+  document.querySelector('#barrel-back-button').addEventListener('click', () => build_barrels('home'));
+
+  fetch(`/load_account`)
+    .then(response => response.json())
+    .then(account => {
+      const barrel_count_total = account.barrel_count + 1;
+      document.querySelector('#edit-barrel-title').value = "Barrel " + barrel_count_total;
+    });
+
+  document.querySelector('#edit-barrel-title').value = '';
+  document.querySelector('#edit-barrel-estimated-ABV').value = '';
+  document.querySelector('#edit-beer-style').value = '';
+  document.querySelector('#edit-barrel-type').value = '';
+  document.querySelector('#edit-barrel-fill-date').value = '';
+  document.querySelector('#edit-barrel-pull-date').value= '';
+  document.querySelector('#edit-barrel-description').value='';
+
+};
+
+function submit_barrel(){
+  document.querySelector('#edit-barrel-view').style.display = 'block';
+  document.querySelector('#submit-barrel-button').style.display= 'block';
+  document.querySelector('#save-changes-button').style.display = 'none';
+  document.querySelector('#edit-account-view').style.display = 'none';
+  document.querySelector('#single-barrel-view').style.display = 'none';
+  document.querySelector('#account-view').style.display = 'none';
+  document.querySelector('#barrels-view').style.display = 'none'; 
+  document.querySelector('#filter-view').style.display = 'none';
+  document.querySelector('#add-note-view').style.display = 'none';
+  document.querySelector('#alerts-view').style.display = 'none';
+
+  const title = document.querySelector('#edit-barrel-title').value;
+  const estimated_ABV = document.querySelector('#edit-barrel-estimated-ABV').value;
+  const beer_style = document.querySelector('#edit-beer-style').value;
+  const barrel_category = document.querySelector('#edit-barrel-type').value;
+  const fill_date = document.querySelector('#edit-barrel-fill-date').value;
+  const pull_date = document.querySelector('#edit-barrel-pull-date').value;
+  const description = document.querySelector('#edit-barrel-description').value;
+
+  fetch(`/submit_barrel`, {
+    method: 'POST',
+    body: JSON.stringify({
+      title: title,
+      estimated_ABV: estimated_ABV,
+      beer_style: beer_style,
+      barrel_category: barrel_category,
+      fill_date: fill_date,
+      pull_date: pull_date,
+      description: description
+    })
+  })  
+  // .then( () => {
+  //   alert("You've added a barrel to the database.")
+  // })
+
+  .then( () => {
+    build_barrels('home');
+  })
+}
 
 //loads user account data
 function load_account(){
@@ -127,6 +190,7 @@ function load_account(){
   document.querySelector('#edit-account-view').style.display = 'none';
   document.querySelector('#add-note-view').style.display = 'none';
   document.querySelector('#alerts-view').style.display = 'none';
+  document.querySelector('#edit-barrel-view').style.display = 'none';
 
   fetch('/load_account')
     .then(response => response.json())
@@ -182,6 +246,7 @@ function load_alerts(){
   document.querySelector('#filter-view').style.display = 'none';
   document.querySelector('#edit-account-view').style.display = 'none';
   document.querySelector('#add-note-view').style.display = 'none';
+  document.querySelector('#edit-barrel-view').style.display = 'none';
 
   document.querySelector('#alerts-view').innerHTML = `<h3> Alerts </h3>`;
 
@@ -193,15 +258,27 @@ function load_alerts(){
       alerts.forEach(alerts => {
       const alert_title = document.createElement('h6');
       const alert_message = document.createElement('div');
-      const line_break = document.createElement('br')
+      const line_break = document.createElement('br');
+      const remove_button = document.createElement('button');
+      const line_break_mark = document.createElement('hr');
+      
 
-      alert_title.innerHTML = "Alert for " + alerts.alert_barrel;
-      alert_message.innerHTML = alerts.alert_message;
-
+      //loads alerts with onclick function linking to barrel
+      alert_title.innerHTML = `Alert for ${alerts.alert_barrel}` + `<br>` + `On: ${alerts.alert_timestamp}` + `<br>` + `${alerts.alert_message}`;
+      alert_title.addEventListener('click', function() {
+        single_barrel_load(alerts.alert_barrel_id)
+      })
+      const alert_id = alerts.id
+      remove_button.innerHTML = "Remove";
+      remove_button.addEventListener('click', function() {
+        remove_alert(alert_id)
+      })
+      document.querySelector('#alerts-view').append(remove_button);
       document.querySelector('#alerts-view').append(alert_title);
-      document.querySelector('#alerts-view').append(alert_message);
       document.querySelector('#alerts-view').append(line_break);
+      document.querySelector('#alerts-view').append(line_break_mark);
     })
+    
   });
   document.getElementById("alerts").style.backgroundColor= "whitesmoke"
   fetch(`/read_alerts`, {
@@ -214,13 +291,13 @@ function load_alerts(){
     console.log("done")
   });
 
-
 };
 //builds barrels based on build view
 function build_barrels(build_view){
 
   document.querySelector('#barrels-view').style.display = 'block'; 
   document.querySelector('#account-view').style.display = 'none';
+  document.querySelector('#edit-barrel-view').style.display = 'none';
   document.querySelector('#single-barrel-view').style.display = 'none';
   document.querySelector('#filter-view').style.display = 'block';
   document.querySelector('#edit-account-view').style.display = 'none';
@@ -241,6 +318,7 @@ function build_barrels(build_view){
         const barrel_title = document.createElement('h3');
         const barrel_fill_date = document.createElement('div');
         const barrel_pull_date = document.createElement('div');
+        const line_break = document.createElement('hr');
         
         const barrel_id = barrels.id
         barrel_title.innerHTML = barrels.title;
@@ -255,6 +333,7 @@ function build_barrels(build_view){
         document.querySelector('#barrels-view').append(barrel_title);
         document.querySelector('#barrels-view').append(barrel_fill_date);
         document.querySelector('#barrels-view').append(barrel_pull_date);
+        document.querySelector('#barrels-view').append(line_break);
 
     });
     
@@ -273,6 +352,7 @@ function build_barrels(build_view){
 function single_barrel_load(id){
   document.querySelector('#single-barrel-view').style.display = 'block';
   document.querySelector('#add-note-view').style.display = 'block';
+  document.querySelector('#edit-barrel-view').style.display = 'none';
   document.querySelector('#account-view').style.display = 'none';
   document.querySelector('#barrels-view').style.display = 'none'; 
   document.querySelector('#filter-view').style.display = 'none';
@@ -302,6 +382,7 @@ function single_barrel_load(id){
         const barrel_add_note_button = document.createElement('button');
         const barrel_stop_alerts_button = document.createElement('button');
         const barrel_start_alerts_button = document.createElement('button');
+        const barrel_edit_button = document.createElement('button');
 
         barrel_estimated_ABV.innerHTML = "Estimated ABV:  " + barrel.estimated_ABV +"%";
         barrel_description.innerHTML = "Description:  " + barrel.description;
@@ -310,6 +391,15 @@ function single_barrel_load(id){
         barrel_fill_date.innerHTML = "Barrel Fill Date:  " + barrel.fill_date;
         barrel_pull_date.innerHTML = "Estimated Pull Date:  " + barrel.pull_date;
         const barrel_id = barrel.id;
+
+        //clear any content in note box
+        document.querySelector('#add-note-content').value = '';
+
+        //edit button
+        barrel_edit_button.innerHTML = "Edit Barrel"
+        barrel_edit_button.addEventListener('click', function() {
+          edit_barrel(barrel_id)
+        })
 
         //bookmark button
         const barrel_bookmarked = barrel.bookmarked;
@@ -369,6 +459,7 @@ function single_barrel_load(id){
         document.querySelector('#single-barrel-view').append(barrel_description);
         document.querySelector('#single-barrel-view').append(barrel_delete_button);
         document.querySelector('#single-barrel-view').append(barrel_add_note_button);
+        document.querySelector('#single-barrel-view').append(barrel_edit_button);
         //conditions the will render the visibility of buttons based on state of the barrel
         if(barrel_archived === false){
         document.querySelector('#single-barrel-view').append(barrel_archive_button);
@@ -395,28 +486,104 @@ function single_barrel_load(id){
         })
   }
 
-  function load_notes(id){
-    fetch(`/load_notes/${id}`)
+  function edit_barrel(id){
+
+    document.querySelector('#edit-barrel-view').style.display = 'block';
+    document.querySelector('#save-changes-button').style.display = 'block';
+    document.querySelector('#submit-barrel-header').style.display = 'none';
+    document.querySelector('#edit-barrel-header').style.display = 'block';
+    document.querySelector('#submit-barrel-button').style.display= 'none';
+    document.querySelector('#edit-account-view').style.display = 'none';
+    document.querySelector('#single-barrel-view').style.display = 'none';
+    document.querySelector('#account-view').style.display = 'none';
+    document.querySelector('#barrels-view').style.display = 'none'; 
+    document.querySelector('#filter-view').style.display = 'none';
+    document.querySelector('#add-note-view').style.display = 'none';
+    document.querySelector('#alerts-view').style.display = 'none';
+
+    document.querySelector('#barrel-back-button').addEventListener('click', () => single_barrel_load(id));
+
+    fetch(`/single_barrel_load/${id}`)
       .then(response => response.json())
-      .then(notes => {
-        console.log(notes)
+      .then(barrel => {
+        console.log(barrel);
+
+        const barrel_id = barrel.id
+        const title = barrel.title
+        const beer_style = barrel.beer_style
+        const barrel_category = barrel.barrel_category
+        const estimated_ABV = parseInt(barrel.estimated_ABV)
+        var fill_date = barrel.fill_date
+        const pull_date = barrel.pull_date
+        const description = barrel.description
+
+        document.querySelector('#edit-barrel-title').value = title;
+        document.querySelector('#edit-barrel-estimated-ABV').value = estimated_ABV;
+        document.querySelector('#edit-beer-style').value = beer_style;
+        document.querySelector('#edit-barrel-type').value = barrel_category;
+        document.querySelector('#edit-barrel-fill-date').value = fill_date;
+        document.querySelector('#edit-barrel-pull-date').value= pull_date;
+        document.querySelector('#edit-barrel-description').value=description;
+
+        document.querySelector('#save-changes-button').addEventListener('click', () => submit_changes_to_barrel(barrel_id))
+      });
+    
+  }
+
+  function submit_changes_to_barrel(id){
+
+        const title = document.querySelector('#edit-barrel-title').value;
+        const estimated_ABV = document.querySelector('#edit-barrel-estimated-ABV').value;
+        const beer_style = document.querySelector('#edit-beer-style').value;
+        const barrel_category = document.querySelector('#edit-barrel-type').value;
+        const fill_date = document.querySelector('#edit-barrel-fill-date').value;
+        const pull_date = document.querySelector('#edit-barrel-pull-date').value;
+        const description = document.querySelector('#edit-barrel-description').value;
+
+        fetch(`/submit_changes_to_barrel/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title: title,
+            estimated_ABV: estimated_ABV,
+            beer_style: beer_style,
+            barrel_category: barrel_category,
+            fill_date: fill_date,
+            pull_date: pull_date,
+            description: description
+          })
+        })  
+        .then( () => {
+          alert("These changes have been made.")
+        })
+        .then ( () => {
+          single_barrel_load(id)
+        })
+  }
+  function load_notes(id){
 
         const barrel_note_header = document.createElement('h3')
         barrel_note_header.innerHTML = "Notes"
         document.querySelector('#single-barrel-view').append(barrel_note_header);
+
+    fetch(`/load_notes/${id}`)
+      .then(response => response.json())
+      .then(notes => {
+        console.log(notes)
 
         notes.forEach(notes => {
         
         const barrel_note_timestamp = document.createElement('div');
         const barrel_note_content = document.createElement('div');
         const line_break = document.createElement('br');
+        const line_break_mark = document.createElement('hr');
 
         barrel_note_timestamp.innerHTML = notes.note_timestamp;
         barrel_note_content.innerHTML = notes.content;
-
+        
         document.querySelector('#single-barrel-view').append(barrel_note_timestamp);
         document.querySelector('#single-barrel-view').append(barrel_note_content);
-        document.querySelector('#single-barrel-view').append(line_break)
+        document.querySelector('#single-barrel-view').append(line_break);
+        document.querySelector('#single-barrel-view').append(line_break_mark);
 
         });
         
@@ -433,14 +600,16 @@ function single_barrel_load(id){
       })
     })
     .then( () => {
-      console.log("done")
-    })
-    .then( () => {
       alert("Your note has been succesfully added")
     })
     .then( () => {
       single_barrel_load(id)
     })
+     //catch error 
+  .catch(error => {
+  console.log('error:', error )
+  alert("You must add content to the note")
+  });
   }
 
   function edit_account(){
@@ -607,5 +776,23 @@ function stop_alerts(id){
 .then( () => {
   single_barrel_load(id)
 });
-}
+};
+//removes alert based on alert id
+function remove_alert(id){
+  //hit API to delete alert from database
+  const delete_confirmation = confirm("Are you sure you want to remove this alert ?");
+  if( delete_confirmation === true ){
+  
+    fetch(`/remove_alert/${id}`,{
+    method: 'DELETE',
+    })
+    .then( () => {
+      alert("This alert has been removed")
+    })
+    //return back to Homepage
+    .then( () => {
+      load_alerts()
+    })
+  }
+  };
 
