@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from django.forms import ModelForm
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
+from dateutil.parser import parse
 
 
 from .models import User, Barrel, Account, Note, Alert
@@ -60,6 +61,47 @@ def add_barrel(request):
             "form": AddNewBarrel(),
             "barrel_count": account.barrel_count
         })
+
+
+@csrf_exempt
+def submit_barrel(request):
+    if request.method == 'POST':
+        account = Account.objects.get(account_owner=request.user)
+        data = json.loads(request.body)
+
+        if data.get("title") is not None:
+            title = data["title"]
+        if data.get("estimated_ABV") is not None:
+            estimated_ABV = data["estimated_ABV"]
+        if data.get("beer_style") is not None:
+            beer_style = data["beer_style"]
+        if data.get("barrel_category") is not None:
+            barrel_category = data["barrel_category"]
+        if data.get("fill_date") is not None:
+            fill_date = parse(data["fill_date"])
+        if data.get("pull_date") is not None:
+            pull_date = parse(data["pull_date"])
+        if data.get("description") is not None:
+            description = data["description"]
+
+            barrel = Barrel(
+                owner=request.user,
+                title=title,
+                estimated_ABV=estimated_ABV,
+                beer_style=beer_style,
+                barrel_category=barrel_category,
+                fill_date=fill_date,
+                pull_date=pull_date,
+                description=description,
+                add_date=datetime.now(),
+                bookmarked=False,
+                archived=False,
+                alert_off=False
+            )
+        barrel.save()
+        account.barrel_count = account.barrel_count + 1
+        account.save()
+        return JsonResponse({"Success": "Barrel has been created"}, status=204)
 
 
 # delete barrel based on ID
@@ -192,11 +234,14 @@ def add_note(request, barrel_id):
                 note_timestamp=datetime.now(),
                 content=content
             )
+        if data["content"] == "":
+            return JsonResponse({"error": "Note requires some content"}, status=404)
         note.save()
         return JsonResponse({"Success": "Note has been added"}, status=204)
 
-
 # implements changes on account
+
+
 @csrf_exempt
 def edit_account(request):
     # query for requested account
@@ -209,6 +254,30 @@ def edit_account(request):
         if data.get("email") is not None:
             user.email = data["email"]
         user.save()
+        return JsonResponse({"Success": "Your changes have been saved"}, status=204)
+
+
+@csrf_exempt
+def submit_changes_to_barrel(request, barrel_id):
+    # submit changes to barrel
+    if request.method == 'PUT':
+        barrel = Barrel.objects.get(pk=barrel_id)
+        data = json.loads(request.body)
+        if data.get("title") is not None:
+            barrel.title = data["title"]
+        if data.get("estimated_ABV") is not None:
+            barrel.estimated_ABV = data["estimated_ABV"]
+        if data.get("beer_style") is not None:
+            barrel.beer_style = data["beer_style"]
+        if data.get("barrel_category") is not None:
+            barrel.barrel_category = data["barrel_category"]
+        if data.get("fill_date") is not None:
+            barrel.fill_date = parse(data["fill_date"])
+        if data.get("pull_date") is not None:
+            barrel.pull_date = parse(data["pull_date"])
+        if data.get("description") is not None:
+            barrel.description = data["description"]
+        barrel.save()
         return JsonResponse({"Success": "Your changes have been saved"}, status=204)
 
 
@@ -255,6 +324,15 @@ def load_alerts(request):
 
         except Alert.DoesNotExist:
             return JsonResponse({"error": "Notes not found."}, status=404)
+
+
+@csrf_exempt
+def remove_alert(request, alert_id):
+    # query for selected alert based on id
+    if request.method == "DELETE":
+        alert = Alert.objects.get(pk=alert_id)
+        alert.delete()
+    return JsonResponse({"Success": "alert deleted"}, status=204)
 
 
 @csrf_exempt
